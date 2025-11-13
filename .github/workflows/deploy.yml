@@ -23,7 +23,7 @@ jobs:
             cd /home/${{ secrets.VPS_USER }}/app
 
             # Login to GHCR
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Pull latest code and images
             git pull origin main
