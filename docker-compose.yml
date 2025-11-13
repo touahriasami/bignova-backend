@@ -1,0 +1,21 @@
+services:
+  mongodb:
+    image: mongo
+    container_name: database
+    ports:
+      - '27017:27017'
+    environment:
+      - MONGO_INITDB_DATABASE=quotes-invoices
+
+  backend-bignova:
+    image: backend-bignova:latest
+    ports:
+      - '4000:3000'
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGO_DB_URI=mongodb://mongodb:27017/quotes-invoices
+      - JWT_SECRET=lksqmjfsqjfmslkdjfmlkqsjdfmlsjqfl
+      - JWT_EXPIRATION=86400
+    depends_on:
+      - mongodb
