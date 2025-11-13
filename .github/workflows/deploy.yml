@@ -9,33 +9,113 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - name: Deploy to VPS with Docker Compose
-        uses: appleboy/ssh-action@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+      - name: Copy docker-compose.yml to VPS
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER}}
-          password: ${{ secrets.VPS_PASSWORD }}
-          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          passowrd: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          source: 'docker-compose.yml,.env'
+          target: '~/app/'
+          strip_components: 0
+
+      - name: Deploy to VPS with Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
           script: |
-            cd /home
-            mkdir ${{ secrets.VPS_USER }}
-            cd ${{ secrets.VPS_USER }}
-            mkdir app
-            cd app
+            cd ~/app
 
-            # Login to GHCR
-            echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # Login to GitHub Container Registry
+            echo ${{ secrets.GH_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
-            # Pull latest code and images
-            git pull origin main
+            # Rename production env file if exists
+            if [ -f .env ]; then
+              mv .env .env
+            fi
+
+            # Pull latest images
             docker compose pull
 
-            # Restart services
+            # Stop and remove old containers
             docker compose down
+
+            # Start new containers
             docker compose up -d
 
-            # Clean up
+            # Clean up unused images
             docker image prune -af
+
+            # Show running containers
+            docker compose ps
+
+      # - name: Deploy to VPS with Docker Compose
+      #   uses: appleboy/ssh-action@v1
+      #   with:
+      #     host: ${{ secrets.VPS_HOST }}
+      #     username: ${{ secrets.VPS_USER}}
+      #     password: ${{ secrets.VPS_PASSWORD }}
+      #     port: ${{ secrets.VPS_PORT }}
+      #     script: |
+      #       cd /home
+      #       mkdir ${{ secrets.VPS_USER }}
+      #       cd ${{ secrets.VPS_USER }}
+      #       mkdir app
+      #       cd app
+
+      #       # Login to GHCR
+      #       echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      #       # Pull latest code and images
+      #       git pull origin main
+      #       docker compose pull
+
+      #       # Restart services
+      #       docker compose down
+      #       docker compose up -d
+
+      #       # Clean up
+      #       docker image prune -af
