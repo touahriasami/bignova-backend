@@ -8,7 +8,8 @@ services:
       - MONGO_INITDB_DATABASE=quotes-invoices
 
   backend-bignova:
-    image: backend-bignova:latest
+    # image: backend-bignova:latest
+    image: ghcr.io/${GITHUB_REPOSITORY:-touahriasami/bignova-backend}:latest
     ports:
       - '4000:3000'
     environment:
