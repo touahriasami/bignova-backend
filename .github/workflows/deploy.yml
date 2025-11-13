@@ -20,6 +20,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT }}
           script: |
+            mkdir /home/${{ secrets.VPS_USER }}/app
             cd /home/${{ secrets.VPS_USER }}/app
 
             # Login to GHCR
