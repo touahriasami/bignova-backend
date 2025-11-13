@@ -20,8 +20,11 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            mkdir /home/${{ secrets.VPS_USER }}/app
-            cd /home/${{ secrets.VPS_USER }}/app
+            cd /home
+            mkdir ${{ secrets.VPS_USER }}
+            cd ${{ secrets.VPS_USER }}
+            mkdir app
+            cd app
 
             # Login to GHCR
             echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
