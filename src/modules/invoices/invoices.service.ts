@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Type } from '@nestjs/common';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -24,8 +24,14 @@ export class InvoicesService {
       .sort({ createdAt: -1 });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} invoice`;
+  findOne(userId: Types.ObjectId ,id: Types.ObjectId) {
+    return this.invoiceModel
+      .findOne({
+        _id: id,
+        userId: userId,
+      })
+      .populate('clientId')
+      .populate('companyId');
   }
 
   update(id: number, updateInvoiceDto: UpdateInvoiceDto) {

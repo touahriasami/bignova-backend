@@ -33,8 +33,8 @@ export class InvoicesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.invoicesService.findOne(+id);
+  findOne(@Req() req, @Param('id') id: Types.ObjectId) {
+    return this.invoicesService.findOne(req.user._id, id);
   }
 
   @Patch(':id')

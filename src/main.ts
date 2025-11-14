@@ -16,7 +16,13 @@ async function bootstrap() {
 
   app.setGlobalPrefix('/api');
 
-  app.enableCors();
+  app.enableCors({
+    origin: [
+      'http://localhost:4200',
+      'http://bignova.smartstack-solutions.com',
+      'https://bignova.smartstack-solutions.com',
+    ],
+  });
 
   // Swagger documentation
   const config = new DocumentBuilder()
