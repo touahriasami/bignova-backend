@@ -6,6 +6,8 @@ services:
       - '27017:27017'
     volumes:
       - ./data:/data/db
+    networks:
+      - quotes-invoices-network
     environment:
       - MONGO_INITDB_DATABASE=quotes-invoices
 
@@ -21,8 +23,14 @@ services:
       - MONGO_DB_URI=mongodb://mongodb:27017/quotes-invoices
       - JWT_SECRET=lksqmjfsqjfmslkdjfmlkqsjdfmlsjqfl
       - JWT_EXPIRATION=86400
+    networks:
+      - quotes-invoices-network
     depends_on:
       - mongodb
 
 volumes:
   data:
+
+networks:
+  default:
+    name: quotes-invoices-network
