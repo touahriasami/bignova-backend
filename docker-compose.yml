@@ -32,5 +32,5 @@ volumes:
   data:
 
 networks:
-  default:
-    name: quotes-invoices-network
+  quotes-invoices-network:
+    driver: bridge
