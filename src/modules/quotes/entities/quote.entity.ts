@@ -82,11 +82,29 @@ export const QuoteSchema = SchemaFactory.createForClass(Quote);
 
 QuoteSchema.post<QuoteDocument>('save', async function (doc, next) {
   try {
-    let date = new Date();
+    const createdAt = (doc as any).createdAt
+      ? new Date((doc as any).createdAt)
+      : new Date();
+    const year = createdAt.getFullYear();
 
-    doc.quoteNumber = `Q-${date.getFullYear()}-${doc.quoteId}`;
+    const QuoteModel = doc.constructor as any;
 
-    doc.save();
+    const startOfYear = new Date(year, 0, 1);
+    const startOfNextYear = new Date(year + 1, 0, 1);
+
+    const countForCompanyYear = await QuoteModel.countDocuments({
+      companyId: doc.companyId,
+      createdAt: { $gte: startOfYear, $lt: startOfNextYear },
+    });
+
+    const sequence = String(countForCompanyYear).padStart(4, '0');
+    const formattedNumber = `Q-${year}-${sequence}`;
+
+    await QuoteModel.updateOne(
+      { _id: doc._id },
+      { $set: { quoteNumber: formattedNumber } },
+    );
+
     next();
   } catch (e) {
     next(e);

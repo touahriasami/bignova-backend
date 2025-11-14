@@ -73,11 +73,29 @@ export const InvoiceSchema = SchemaFactory.createForClass(Invoice);
 
 InvoiceSchema.post<InvoiceDocument>('save', async function (doc, next) {
   try {
-    let date = new Date();
+    const createdAt = (doc as any).createdAt
+      ? new Date((doc as any).createdAt)
+      : new Date();
+    const year = createdAt.getFullYear();
 
-    doc.invoiceNumber = `F-${date.getFullYear()}-${doc.invoiceId}`;
+    const InvoiceModel = doc.constructor as any;
 
-    doc.save();
+    const startOfYear = new Date(year, 0, 1);
+    const startOfNextYear = new Date(year + 1, 0, 1);
+
+    const countForCompanyYear = await InvoiceModel.countDocuments({
+      companyId: doc.companyId,
+      createdAt: { $gte: startOfYear, $lt: startOfNextYear },
+    });
+
+    const sequence = String(countForCompanyYear).padStart(4, '0');
+    const formattedNumber = `F-${year}-${sequence}`;
+    
+    await InvoiceModel.updateOne(
+      { _id: doc._id },
+      { $set: { invoiceNumber: formattedNumber } },
+    );
+
     next();
   } catch (e) {
     next(e);
