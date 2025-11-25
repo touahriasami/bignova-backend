@@ -4,9 +4,6 @@ WORKDIR /usr/app/backend
 
 COPY package*.json .
 
-# pour mac
-# RUN npm install --os=linux --libc=musl --cpu=arm64 sharp
-# pour linux
 RUN npm install --os=linux --libc=musl --cpu=x64 sharp
 RUN npm install
 
